@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The foreground layer of the adaptive icon.
+
+  An adaptive icon layer is 108x108dp, but launchers crop it to their own mask —
+  a circle, a squircle, a rounded square — and only the middle 72x72dp is
+  guaranteed to survive on every one of them. The logo is therefore drawn at
+  70dp and centred, so the pillars, the shield and the banner underneath all
+  stay inside the mask instead of having their edges shaved off.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/logo_lawyer"
+        android:gravity="center"
+        android:width="70dp"
+        android:height="70dp" />
+</layer-list>

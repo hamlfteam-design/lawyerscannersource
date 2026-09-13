@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- The document library lives here: internal, private, never on a server. -->
+    <files-path
+        name="library"
+        path="docs/" />
+    <cache-path
+        name="shared"
+        path="share/" />
+    <external-files-path
+        name="exports"
+        path="exports/" />
+</paths>

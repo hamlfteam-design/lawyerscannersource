@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PLACEHOLDER — replace with the real logo.
+
+  Drop `logo_lawyer.png` into this same folder (app/src/main/res/drawable/) and
+  then delete this file. Two files with the same resource name in one folder is
+  a build error, so the .png and this .xml cannot both be here.
+
+  Deliberately a plain sheet of paper: a placeholder should read as "artwork is
+  missing", not as a symbol of anything.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sheet with a folded corner -->
+    <path
+        android:fillColor="#F2E9D8"
+        android:pathData="M32,20h30l14,14v54a4,4 0 0,1 -4,4h-40a4,4 0 0,1 -4,-4v-64a4,4 0 0,1 4,-4z" />
+    <path
+        android:fillColor="#C8971E"
+        android:pathData="M62,20l14,14h-14z" />
+    <!-- Ruled lines -->
+    <path
+        android:fillColor="#C8971E"
+        android:pathData="M40,46h28v4h-28zM40,58h28v4h-28zM40,70h18v4h-18z" />
+</vector>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Arabic is the DEFAULT locale for this app (it is a personal build), so the base
+  values/ folder holds Arabic. values-en/ holds the English fallback.
+-->
+<resources>
+    <string name="app_name">المحامي المحترف سكانر</string>
+
+    <!-- Home -->
+    <string name="home_title">مستنداتي</string>
+    <string name="search_hint">ابحث في الأسماء والحقول والنص…</string>
+    <string name="empty_library">مفيش مستندات لسه.\nاضغط زر الكاميرا عشان تبدأ.</string>
+    <string name="empty_folder">المجلد ده فاضي.</string>
+    <string name="new_folder">مجلد جديد</string>
+    <string name="folder_name">اسم المجلد</string>
+    <string name="rename">إعادة تسمية</string>
+    <string name="delete">حذف</string>
+    <string name="move_to">نقل إلى…</string>
+    <string name="root_folder">الرئيسية</string>
+    <string name="folders">المجلدات</string>
+    <string name="documents">المستندات</string>
+    <string name="lock_folder">قفل المجلد</string>
+    <string name="unlock_folder">فتح قفل المجلد</string>
+
+    <!-- Capture -->
+    <string name="scan">مسح</string>
+    <string name="import_from_gallery">استيراد من المعرض</string>
+    <string name="capture">التقاط</string>
+    <string name="flash">الفلاش</string>
+    <string name="auto_capture">التقاط تلقائي</string>
+    <string name="grid">الشبكة</string>
+    <string name="batch_mode">وضع الدفعة</string>
+    <string name="pages_count">%1$d صفحة</string>
+    <string name="camera_permission_needed">التطبيق محتاج إذن الكاميرا عشان يمسح المستندات.</string>
+    <string name="grant_permission">السماح</string>
+
+    <!-- Crop -->
+    <string name="crop_title">ظبّط الحواف</string>
+    <string name="auto_detect">كشف تلقائي</string>
+    <string name="select_all">الصورة كلها</string>
+    <string name="rotate_left">تدوير لليسار</string>
+    <string name="rotate_right">تدوير لليمين</string>
+    <string name="next">التالي</string>
+    <string name="done">تم</string>
+    <string name="cancel">إلغاء</string>
+    <string name="save">حفظ</string>
+    <string name="retake">إعادة التقاط</string>
+
+    <!-- Filters -->
+    <string name="filter_original">أصلي</string>
+    <string name="filter_magic">مستند ملوّن</string>
+    <string name="filter_gray">تدرّج رمادي</string>
+    <string name="filter_bw">أبيض وأسود</string>
+    <string name="filter_lighten">تفتيح</string>
+    <string name="filters">الفلاتر</string>
+    <string name="brightness">السطوع</string>
+    <string name="contrast">التباين</string>
+    <string name="apply_to_all">طبّق على كل الصفحات</string>
+
+    <!-- Document -->
+    <string name="doc_title">اسم المستند</string>
+    <string name="doc_untitled">مستند بدون اسم</string>
+    <string name="note">ملاحظات</string>
+    <string name="tags">وسوم</string>
+    <string name="tags_hint">افصل بفاصلة</string>
+    <string name="details">البيانات</string>
+    <string name="pages">الصفحات</string>
+    <string name="add_page">إضافة صفحة</string>
+    <string name="delete_page">حذف الصفحة</string>
+    <string name="reorder">إعادة ترتيب</string>
+    <string name="favorite">مفضّل</string>
+    <string name="created_at">أُنشئ في</string>
+    <string name="updated_at">آخر تعديل</string>
+
+    <!-- Export -->
+    <string name="export">تصدير</string>
+    <string name="export_pdf">تصدير PDF</string>
+    <string name="export_jpg">تصدير صور JPG</string>
+    <string name="export_text">تصدير النص</string>
+    <string name="share">مشاركة</string>
+    <string name="exported_to">اتحفظ في: %1$s</string>
+    <string name="export_failed">التصدير فشل: %1$s</string>
+    <string name="pdf_page_size">مقاس صفحة PDF</string>
+    <string name="pdf_size_fit">مطابق للصورة</string>
+    <string name="pdf_size_a4">A4</string>
+    <string name="pdf_size_letter">Letter</string>
+    <string name="pdf_quality">جودة الضغط</string>
+
+    <!-- OCR -->
+    <string name="ocr">استخراج النص (OCR)</string>
+    <string name="ocr_running">جاري استخراج النص…</string>
+    <string name="ocr_empty">مفيش نص اتعرف عليه.</string>
+    <string name="ocr_copy">نسخ النص</string>
+    <string name="ocr_copied">النص اتنسخ.</string>
+    <string name="ocr_lang_missing">ملفات اللغة مش موجودة. لازم تتحمّل مرة واحدة (حوالي ٣ ميجا).</string>
+    <string name="ocr_download">تحميل ملفات اللغة</string>
+    <string name="ocr_downloading">جاري التحميل…</string>
+    <string name="ocr_download_failed">التحميل فشل: %1$s</string>
+    <string name="ocr_lang">لغة الاستخراج</string>
+
+    <!-- Custom fields -->
+    <string name="custom_fields">حقول الحفظ</string>
+    <string name="custom_fields_desc">عرّف الحقول اللي بتملاها مع كل مستند، واربطها بمجلد معيّن لو حبيت.</string>
+    <string name="new_field">حقل جديد</string>
+    <string name="field_name">اسم الحقل</string>
+    <string name="field_type">نوع الحقل</string>
+    <string name="field_required">إلزامي</string>
+    <string name="field_options">الخيارات</string>
+    <string name="field_options_hint">افصل بفاصلة، مثال: فاتورة, عقد, إيصال</string>
+    <string name="field_default">القيمة الافتراضية</string>
+    <string name="field_scope">يظهر في</string>
+    <string name="field_scope_all">كل المجلدات</string>
+    <string name="field_required_missing">الحقل «%1$s» إلزامي.</string>
+    <string name="type_text">نص</string>
+    <string name="type_number">رقم</string>
+    <string name="type_date">تاريخ</string>
+    <string name="type_select">قائمة اختيار</string>
+    <string name="type_bool">نعم / لا</string>
+
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="security">الأمان</string>
+    <string name="app_lock">قفل التطبيق بالبصمة</string>
+    <string name="app_lock_desc">اطلب البصمة أو قفل الشاشة عند فتح التطبيق.</string>
+    <string name="storage">التخزين</string>
+    <string name="storage_desc">كل المستندات محفوظة في الذاكرة الداخلية للجهاز، جوه مساحة التطبيق الخاصة. مفيش أي رفع لسيرفر.</string>
+    <string name="storage_used">المساحة المستخدمة: %1$s</string>
+    <string name="export_folder">مجلد التصدير</string>
+    <string name="scan_defaults">افتراضيات المسح</string>
+    <string name="default_filter">الفلتر الافتراضي</string>
+    <string name="about">عن التطبيق</string>
+    <string name="about_desc">ماسح مستندات شخصي — يشتغل أوفلاين بالكامل.</string>
+
+    <!-- Lock -->
+    <string name="unlock">فتح القفل</string>
+    <string name="unlock_prompt">اثبت هويتك عشان تفتح مستنداتك</string>
+    <string name="unlock_failed">فشل التحقق</string>
+    <string name="use_pin">استخدم قفل الشاشة</string>
+
+    <!-- Generic -->
+    <string name="ok">تمام</string>
+    <string name="confirm_delete_doc">تحذف المستند ده وكل صفحاته؟ مفيش رجوع.</string>
+    <string name="confirm_delete_folder">تحذف المجلد ده؟ اللي جواه هيتنقل للرئيسية.</string>
+    <string name="confirm_delete_field">تحذف الحقل ده؟ القيم المحفوظة فيه هتتمسح.</string>
+    <string name="sort_by">ترتيب حسب</string>
+    <string name="sort_date_desc">الأحدث أولًا</string>
+    <string name="sort_date_asc">الأقدم أولًا</string>
+    <string name="sort_name">الاسم</string>
+    <string name="view_grid">شبكة</string>
+    <string name="view_list">قائمة</string>
+    <string name="back">رجوع</string>
+    <string name="more">المزيد</string>
+    <string name="filter_auto">تحسين تلقائي</string>
+    <string name="auto_enhance_desc">إزالة الظل + ضبط الألوان + توضيح النص تلقائيًا</string>
+    <string name="detected_format">اتعرف عليه: %1$s</string>
+    <string name="snap_format">اضبط على مقاس %1$s</string>
+    <string name="format_free">حر</string>
+    <string name="format_auto">تلقائي</string>
+    <string name="format_auto_detected">تلقائي (%1$s)</string>
+
+    <string name="compress">ضغط الحجم</string>
+    <string name="compress_title">ضغط لحجم محدد</string>
+    <string name="compress_desc">للرفع على المواقع الحكومية اللي بتحدّد حجم أقصى للمرفق.</string>
+    <string name="compress_target">الحجم المطلوب</string>
+    <string name="compress_custom">حجم مخصص (ك.ب)</string>
+    <string name="compress_result">الحجم النهائي: %1$s (المطلوب %2$s)</string>
+    <string name="compress_floor">مقدرتش أوصل للحجم ده من غير ما الصورة تبوظ. أقل حجم مقروء: %1$s</string>
+    <string name="compress_running">بيضغط…</string>
+
+    <string name="send_whatsapp">إرسال بالواتساب</string>
+    <string name="whatsapp_missing">واتساب مش متثبّت على الجهاز.</string>
+    <string name="share_other">مشاركة بطريقة تانية</string>
+
+    <string name="index">الفهرس</string>
+    <string name="index_desc">كل المستندات مرتّبة حسب العميل والقضية والحقول.</string>
+    <string name="index_by_folder">حسب المجلد</string>
+    <string name="index_by_field">حسب الحقل</string>
+    <string name="index_by_tag">حسب الوسم</string>
+    <string name="index_recent">آخر المسوحات</string>
+    <string name="index_empty">مفيش حاجة في الفهرس لسه.</string>
+    <string name="results_count">%1$d نتيجة</string>
+
+    <string name="new_client">عميل جديد</string>
+    <string name="client_name">اسم العميل</string>
+    <string name="case_name">اسم القضية / الموضوع</string>
+    <string name="case_optional">(اختياري)</string>
+    <string name="export_tree">تصدير كمجلدات</string>
+    <string name="merge_pdf">دمج في PDF واحد</string>
+    <string name="export_tree_desc">ينسخ شجرة المجلدات زي ما هي على ذاكرة الجهاز، كل مستند PDF.</string>
+    <string name="backup">النسخ الاحتياطي</string>
+    <string name="backup_desc">ملف واحد فيه كل مستنداتك ومجلداتك وحقولك. إنت تختار مكان الحفظ — درايف، كارت ذاكرة، أي حتة. التطبيق نفسه مبيوصلش لأي سحابة.</string>
+    <string name="backup_now">نسخة دلوقتي</string>
+    <string name="backup_encrypt">تشفير بكلمة سر</string>
+    <string name="backup_encrypt_warning">لو نسيت كلمة السر، النسخة تروح — مفيش استرجاع.</string>
+    <string name="backup_password">كلمة سر النسخة</string>
+    <string name="password">كلمة السر</string>
+    <string name="password_again">أعد كتابتها</string>
+    <string name="password_hint">٦ حروف على الأقل.</string>
+    <string name="password_mismatch">الكلمتين مش متطابقتين.</string>
+    <string name="restore">استعادة</string>
+    <string name="restore_password">كلمة سر النسخة</string>
+    <string name="restore_pick">اختر الملف</string>
+    <string name="restore_warning">الاستعادة هتمسح كل اللي في التطبيق دلوقتي وتحط محله محتوى النسخة. لو عندك شغل مش متنسّخ، اعمله نسخة الأول.</string>
+    <string name="backup_running">بيعمل النسخة…</string>
+    <string name="restore_running">بيرجّع…</string>
+    <string name="backup_new">نسخة جديدة</string>
+    <string name="backup_update">تحديث آخر نسخة في مكانها</string>
+    <string name="backup_update_hint">بيكتب فوق نفس الملف اللي على السحابة بدل ما يعمل نسخة تانية جنبه.</string>
+    <string name="backup_last">آخر نسخة: %1$s — %2$s</string>
+    <string name="backup_label">اسم مميّز للنسخة</string>
+    <string name="backup_label_hint">مثال: مكتب — عشان تفرّق بين نسخ أجهزة مختلفة</string>
+
+    <!-- Import from another scanner app -->
+    <string name="import_documents">استيراد من تطبيق تاني</string>
+    <string name="import_title">استيراد ملفات PDF</string>
+    <string name="import_desc">صدّر مستنداتك من CamScanner كـ PDF على ذاكرة الجهاز، وبعدين اختارها من هنا.</string>
+    <string name="import_files">اختر ملفات PDF</string>
+    <string name="import_folder">اختر مجلد كامل</string>
+    <string name="import_note">لو اخترت مجلد، هيتعمل نفس شجرة المجلدات جوه التطبيق.\n\nاللي جوه مجلد العملاء بيتفهرس تلقائي: المجلد الخارجي = اسم العميل، واللي جواه = رقم القضية.\n\nومجلدات زي «توكيلات» و«بطاقات» بتتنقل زي ما هي — إلا لو اسم الملف فيه اسم عميل عندك، ساعتها بيروح لفولدر العميل ده لأنه بتاعه هو مش بتاع قضية واحدة.\n\nالصفحات بتتحفظ زي ما هي، من غير إعادة قص أو تحسين.</string>
+    <string name="import_running">بيستورد…</string>
+    <string name="import_done">✓ %1$d مستند · %2$d صفحة</string>
+    <string name="import_done_folders">✓ %1$d مستند · %2$d صفحة · %3$d مجلد</string>
+    <string name="import_skipped">%1$d ملف اتخطّى</string>
+    <string name="import_linked">%1$d اتربطوا بعملائهم</string>
+    <string name="import_failed">الاستيراد فشل: %1$s</string>
+
+    <!-- Edge detection feedback -->
+    <string name="detect_none">مقدرتش أحدد حواف الورقة — اسحب النقط بإيدك</string>
+    <string name="detect_unavailable">كشف الحواف مش شغّال على الجهاز ده</string>
+
+    <!-- Continuous scanning -->
+    <string name="capture_auto">تلقائي</string>
+    <string name="capture_manual">يدوي</string>
+    <string name="auto_hint_searching">حطّ الورقة قدام الكاميرا</string>
+    <string name="auto_hint_hold">ثبّت شوية…</string>
+    <string name="saving_page">بيحفظ الصفحة…</string>
+    <string name="edit_crop">تعديل القص</string>
+
+    <!-- Home presentation -->
+    <string name="create">إضافة</string>
+    <string name="new_client_desc">فولدر بالاسم وجواه فولدر للقضية</string>
+    <string name="new_folder_desc">فولدر فاضي تسمّيه براحتك</string>
+    <string name="scan_desc">افتح الكاميرا وابدأ مسح</string>
+    <string name="import_desc_short">من CamScanner أو أي ملفات PDF</string>
+    <string name="empty_hint">ابدأ بمسح مستند، أو أضف عميل جديد وقضيته.</string>
+    <string name="folder_count">%1$d مجلد</string>
+    <string name="doc_count">%1$d مستند</string>
+    <string name="move_earlier">تحريك للأول</string>
+    <string name="move_later">تحريك للآخر</string>
+</resources>

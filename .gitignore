@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+.kotlin/
+app/build/
+build/
+local.properties
+*.iml
+.DS_Store
+Claude outputs/
