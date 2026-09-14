@@ -330,6 +330,80 @@ class DocumentRepository(
     }
 
     /**
+     * Detects, crops and rotates one ID card photo the same way a normal page
+     * would be processed, but returns the bitmap instead of saving it — used to
+     * build the two halves of an ID-card page before they are composited.
+     */
+    private fun renderCardSide(source: Bitmap): Bitmap {
+        val quad = EdgeDetector.detect(source)
+        return renderPage(
+            original = source,
+            quad = quad,
+            filter = PageFilter.AUTO,
+            rotation = 0,
+            brightness = 0,
+            contrast = 0,
+            snapTo = null
+        )
+    }
+
+    /**
+     * Builds one page out of two ID-card photos (front then back): each side is
+     * cropped and enhanced on its own, then stacked into a single portrait
+     * canvas with a light label under each half — the layout law offices expect
+     * when printing or filing a copied ID.
+     */
+    suspend fun addIdCardPage(
+        documentId: String,
+        front: Bitmap,
+        back: Bitmap
+    ): PageEntity = withContext(Dispatchers.IO) {
+        val frontCard = renderCardSide(front)
+        val backCard = renderCardSide(back)
+        val composed = try {
+            ImageProcessor.composeIdCardPage(frontCard, backCard)
+        } finally {
+            if (frontCard !== front) frontCard.recycle()
+            if (backCard !== back) backCard.recycle()
+        }
+
+        val pageId = UUID.randomUUID().toString()
+        val position = pages.nextPosition(documentId)
+        val stamp = System.currentTimeMillis()
+        val originalName = "orig_$pageId.jpg"
+        val fileName = "page_$pageId.jpg"
+        val thumbName = "thumb_$pageId.jpg"
+
+        // The composed page *is* the original here — there is no single raw
+        // photo to re-crop later, only the two source shots this call already
+        // consumed.
+        storage.writeJpeg(storage.pageFile(documentId, originalName), composed, 92)
+        storage.writeJpeg(storage.pageFile(documentId, fileName), composed)
+        storage.writeThumb(documentId, thumbName, composed)
+        composed.recycle()
+
+        val page = PageEntity(
+            id = pageId,
+            documentId = documentId,
+            position = position,
+            fileName = fileName,
+            thumbName = thumbName,
+            originalName = originalName,
+            filter = PageFilter.AUTO.name,
+            rotation = 0,
+            quad = null,
+            brightness = 0,
+            contrast = 0,
+            snapFormat = null,
+            processed = true,
+            createdAt = stamp
+        )
+        pages.insert(page)
+        documents.touch(documentId, stamp)
+        page
+    }
+
+    /**
      * The end-of-session sweep: runs edge detection and the chosen filter over
      * every page in [documentId] still carrying its raw capture, replacing the
      * placeholder file written by [addRawPage] with the real crop and

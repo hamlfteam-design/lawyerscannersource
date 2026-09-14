@@ -113,6 +113,8 @@ fun CameraScreen(
     val saving by scanViewModel.saving.collectAsState()
     val pending by scanViewModel.pending.collectAsState()
     val lastThumb by scanViewModel.lastPageThumb.collectAsState()
+    val idCardMode by scanViewModel.idCardMode.collectAsState()
+    val idCardFrontPending by scanViewModel.idCardFrontPending.collectAsState()
 
     var hasPermission by remember {
         mutableStateOf(
@@ -210,6 +212,13 @@ fun CameraScreen(
                 Icon(Icons.Default.Close, stringResource(R.string.cancel), tint = Color.White)
             }
             Spacer(Modifier.weight(1f))
+            // Toggles ID-card mode: the next two shutter presses become the
+            // front then the back of one card instead of two separate pages.
+            IdCardToggle(
+                active = idCardMode,
+                onClick = { scanViewModel.setIdCardMode(!idCardMode) }
+            )
+            Spacer(Modifier.size(4.dp))
             IconButton(
                 onClick = {
                     flashMode = when (flashMode) {
@@ -242,6 +251,16 @@ fun CameraScreen(
         ) {
             if (session.savedPages > 0) {
                 Pill(stringResource(R.string.pages_count, session.savedPages))
+                Spacer(Modifier.size(6.dp))
+            }
+            if (idCardMode) {
+                Pill(
+                    text = if (idCardFrontPending) {
+                        "صوّر الوجه الخلفي للبطاقة"
+                    } else {
+                        "صوّر الوجه الأمامي للبطاقة"
+                    }
+                )
                 Spacer(Modifier.size(6.dp))
             }
             if (saving) {
@@ -320,12 +339,20 @@ fun CameraScreen(
                                 // Detect, crop, enhance and file the page right
                                 // away — the shutter is the only action needed
                                 // per page; the camera stays open for the next
-                                // one until «تم» is pressed.
-                                scanViewModel.capturePage(
-                                    bitmap = bitmap,
-                                    previewQuad = fired?.quad,
-                                    previewAspect = previewAspect
-                                )
+                                // one until «تم» is pressed. In ID-card mode the
+                                // first two presses become one page instead.
+                                if (idCardMode) {
+                                    scanViewModel.captureIdCardShot(
+                                        bitmap = bitmap,
+                                        onNeedBack = {}
+                                    )
+                                } else {
+                                    scanViewModel.capturePage(
+                                        bitmap = bitmap,
+                                        previewQuad = fired?.quad,
+                                        previewAspect = previewAspect
+                                    )
+                                }
                             }
 
                             override fun onError(exception: ImageCaptureException) {
@@ -419,6 +446,30 @@ private fun Pill(text: String) {
             .background(Color.Black.copy(alpha = 0.45f))
             .padding(horizontal = 14.dp, vertical = 6.dp)
     )
+}
+
+/**
+ * Turns ID-card mode on or off. Deliberately a plain "ID" badge rather than a
+ * Material icon — the extended icon pack this app depends on has no card
+ * glyph, and a two-letter badge reads clearly enough at this size.
+ */
+@Composable
+private fun IdCardToggle(active: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (active) Color(0xFF4ADE80) else Color.Black.copy(alpha = 0.35f)),
+        contentAlignment = Alignment.Center
+    ) {
+        IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
+            Text(
+                text = "ID",
+                color = if (active) Color.Black else Color.White,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
 }
 
 @Composable

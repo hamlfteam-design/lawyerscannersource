@@ -92,6 +92,28 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     private val _editingPage = MutableStateFlow(false)
     val editingPage: StateFlow<Boolean> = _editingPage.asStateFlow()
 
+    /**
+     * ID-card capture: true once the user turns the mode on from the camera
+     * screen. The next two shutter presses are treated as the front then the
+     * back of one card instead of two ordinary pages.
+     */
+    private val _idCardMode = MutableStateFlow(false)
+    val idCardMode: StateFlow<Boolean> = _idCardMode.asStateFlow()
+
+    /** The front shot, held here while waiting for the back. */
+    private val _idCardFront = MutableStateFlow<Bitmap?>(null)
+
+    /** True once the front has been shot and the UI should prompt for the back. */
+    private val _idCardFrontPending = MutableStateFlow(false)
+    val idCardFrontPending: StateFlow<Boolean> = _idCardFrontPending.asStateFlow()
+
+    fun setIdCardMode(enabled: Boolean) {
+        _idCardMode.value = enabled
+        _idCardFront.value?.let { if (!it.isRecycled) it.recycle() }
+        _idCardFront.value = null
+        _idCardFrontPending.value = false
+    }
+
     private var editingPageId: String? = null
         set(value) {
             field = value
@@ -187,6 +209,50 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
             } catch (t: Throwable) {
                 _error.value = t.message
             } finally {
+                _saving.value = false
+            }
+        }
+    }
+
+    /**
+     * A shutter press while [idCardMode] is on. The first press holds the shot
+     * as the card's front and asks (via [onNeedBack]) for the back; the second
+     * press composites both sides into one page through
+     * [com.personal.docscanner.data.repo.DocumentRepository.addIdCardPage] and
+     * turns the mode back off, exactly like a normal capture otherwise.
+     */
+    fun captureIdCardShot(
+        bitmap: Bitmap,
+        onNeedBack: () -> Unit,
+        onSaved: () -> Unit = {}
+    ) {
+        val front = _idCardFront.value
+        if (front == null) {
+            _idCardFront.value = bitmap
+            _idCardFrontPending.value = true
+            onNeedBack()
+            return
+        }
+        viewModelScope.launch {
+            _saving.value = true
+            try {
+                val docId = _session.value.documentId
+                    ?: repo.createDocument(_session.value.folderId)
+                val page = repo.addIdCardPage(docId, front, bitmap)
+                _lastPageThumb.value = repo.storage.pagePath(docId, page.thumbName)
+                _session.value = _session.value.copy(
+                    documentId = docId,
+                    savedPages = _session.value.savedPages + 1
+                )
+                onSaved()
+            } catch (t: Throwable) {
+                _error.value = t.message
+            } finally {
+                front.recycle()
+                bitmap.recycle()
+                _idCardFront.value = null
+                _idCardFrontPending.value = false
+                _idCardMode.value = false
                 _saving.value = false
             }
         }
@@ -388,6 +454,10 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         editingPageId = null
         _lastPageThumb.value = null
         _session.value = Session()
+        _idCardFront.value?.let { if (!it.isRecycled) it.recycle() }
+        _idCardFront.value = null
+        _idCardFrontPending.value = false
+        _idCardMode.value = false
     }
 
     override fun onCleared() {

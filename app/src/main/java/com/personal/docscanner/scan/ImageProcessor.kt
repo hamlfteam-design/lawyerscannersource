@@ -269,6 +269,75 @@ object ImageProcessor {
         return out
     }
 
+    // -------------------------------------------------------------- ID cards
+
+    /** Canvas width an ID-card page is built at; both halves scale to fit it. */
+    private const val ID_CARD_PAGE_WIDTH = 1600
+    private const val ID_CARD_MARGIN = 40
+    private const val ID_CARD_GAP = 28
+    private const val ID_CARD_LABEL_HEIGHT = 52
+
+    /**
+     * Stacks two already-cropped card photos (front, then back) into one
+     * portrait page with a light caption under each half — front on top, back
+     * below, both scaled to the same width. Falls back to whichever side is
+     * present if the other failed to decode upstream (never happens in
+     * practice since callers always pass real bitmaps, but keeps this total).
+     */
+    fun composeIdCardPage(front: Bitmap, back: Bitmap): Bitmap {
+        val pageWidth = ID_CARD_PAGE_WIDTH
+        val innerWidth = pageWidth - ID_CARD_MARGIN * 2
+
+        fun scaledHeight(bmp: Bitmap): Int =
+            (bmp.height.toFloat() * innerWidth / bmp.width).toInt().coerceAtLeast(1)
+
+        val frontHeight = scaledHeight(front)
+        val backHeight = scaledHeight(back)
+        val pageHeight = ID_CARD_MARGIN * 2 +
+            ID_CARD_LABEL_HEIGHT + frontHeight +
+            ID_CARD_GAP +
+            ID_CARD_LABEL_HEIGHT + backHeight
+
+        val page = Bitmap.createBitmap(pageWidth, pageHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(page)
+        canvas.drawColor(android.graphics.Color.WHITE)
+
+        val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.DKGRAY
+            textSize = 34f
+            isFakeBoldText = true
+        }
+        val borderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.LTGRAY
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+
+        var y = ID_CARD_MARGIN
+        canvas.drawText("الوجه الأمامي — Front", ID_CARD_MARGIN.toFloat(), (y + 36).toFloat(), labelPaint)
+        y += ID_CARD_LABEL_HEIGHT
+        val frontScaled = Bitmap.createScaledBitmap(front, innerWidth, frontHeight, true)
+        canvas.drawBitmap(frontScaled, ID_CARD_MARGIN.toFloat(), y.toFloat(), null)
+        canvas.drawRect(
+            ID_CARD_MARGIN.toFloat(), y.toFloat(),
+            (ID_CARD_MARGIN + innerWidth).toFloat(), (y + frontHeight).toFloat(), borderPaint
+        )
+        if (frontScaled !== front) frontScaled.recycle()
+        y += frontHeight + ID_CARD_GAP
+
+        canvas.drawText("الوجه الخلفي — Back", ID_CARD_MARGIN.toFloat(), (y + 36).toFloat(), labelPaint)
+        y += ID_CARD_LABEL_HEIGHT
+        val backScaled = Bitmap.createScaledBitmap(back, innerWidth, backHeight, true)
+        canvas.drawBitmap(backScaled, ID_CARD_MARGIN.toFloat(), y.toFloat(), null)
+        canvas.drawRect(
+            ID_CARD_MARGIN.toFloat(), y.toFloat(),
+            (ID_CARD_MARGIN + innerWidth).toFloat(), (y + backHeight).toFloat(), borderPaint
+        )
+        if (backScaled !== back) backScaled.recycle()
+
+        return page
+    }
+
     // ------------------------------------------------------------- utilities
 
     fun rotate(source: Bitmap, degrees: Int): Bitmap {
