@@ -219,6 +219,63 @@ class DocumentRepository(
     suspend fun moveDocument(id: String, folderId: String?) =
         documents.move(id, folderId, System.currentTimeMillis())
 
+    /**
+     * Copies a document — its metadata, its field values, and every page file
+     * on disk — into a new document, optionally in a different folder. Used
+     * by "نسخ" in the document's own menu: unlike [moveDocument], the
+     * original is left exactly where it was.
+     */
+    suspend fun duplicateDocument(id: String, folderId: String?): String? =
+        withContext(Dispatchers.IO) {
+            val source = documents.byId(id) ?: return@withContext null
+            val now = System.currentTimeMillis()
+            val newId = UUID.randomUUID().toString()
+
+            documents.upsert(
+                source.copy(
+                    id = newId,
+                    folderId = folderId,
+                    favorite = false,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            )
+
+            fields.values(id).takeIf { it.isNotEmpty() }?.let { values ->
+                fields.upsertValues(values.map { it.copy(documentId = newId) })
+            }
+
+            pages.forDoc(id).forEach { page ->
+                val newPageId = UUID.randomUUID().toString()
+                val newOriginalName = page.originalName?.let { "orig_$newPageId.jpg" }
+                val newFileName = "page_$newPageId.jpg"
+                val newThumbName = "thumb_$newPageId.jpg"
+
+                copyPageFile(id, page.fileName, newId, newFileName)
+                copyPageFile(id, page.thumbName, newId, newThumbName)
+                if (page.originalName != null && newOriginalName != null) {
+                    copyPageFile(id, page.originalName, newId, newOriginalName)
+                }
+
+                pages.insert(
+                    page.copy(
+                        id = newPageId,
+                        documentId = newId,
+                        fileName = newFileName,
+                        thumbName = newThumbName,
+                        originalName = newOriginalName
+                    )
+                )
+            }
+            newId
+        }
+
+    private fun copyPageFile(fromDoc: String, fromName: String, toDoc: String, toName: String) {
+        val source = storage.pageFile(fromDoc, fromName)
+        if (!source.exists()) return
+        source.copyTo(storage.pageFile(toDoc, toName), overwrite = true)
+    }
+
     suspend fun setFavorite(id: String, favorite: Boolean) =
         documents.setFavorite(id, favorite, System.currentTimeMillis())
 

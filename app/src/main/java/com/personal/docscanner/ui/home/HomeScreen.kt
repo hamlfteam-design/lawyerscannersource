@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
@@ -172,6 +174,8 @@ fun HomeScreen(
     var renameTarget by remember { mutableStateOf<FolderSummary?>(null) }
     var deleteFolderTarget by remember { mutableStateOf<FolderSummary?>(null) }
     var deleteDocTarget by remember { mutableStateOf<DocumentSummary?>(null) }
+    var moveDocTarget by remember { mutableStateOf<DocumentSummary?>(null) }
+    val allFolders by viewModel.allFolders.collectAsState()
 
     LaunchedEffect(message) {
         message?.let {
@@ -310,7 +314,9 @@ fun HomeScreen(
                             summary = summary,
                             onOpen = { onOpenDocument(summary.doc.id) },
                             onToggleFavorite = { viewModel.toggleFavorite(summary) },
-                            onDelete = { deleteDocTarget = summary }
+                            onDelete = { deleteDocTarget = summary },
+                            onMove = { moveDocTarget = summary },
+                            onCopy = { viewModel.duplicateDocument(summary.doc.id, summary.doc.folderId) }
                         )
                     }
                 }
@@ -439,6 +445,92 @@ fun HomeScreen(
             onDismiss = { deleteDocTarget = null }
         )
     }
+
+    moveDocTarget?.let { target ->
+        FolderPickerDialog(
+            title = stringResource(R.string.move_to_folder),
+            folders = allFolders,
+            currentFolderId = target.doc.folderId,
+            onPick = { destination ->
+                viewModel.moveDocument(target.doc.id, destination)
+                moveDocTarget = null
+            },
+            onDismiss = { moveDocTarget = null }
+        )
+    }
+}
+
+/**
+ * Every folder in the library as one flat, indented list — a document can
+ * move anywhere, not just into a sibling of where it already is, so this
+ * deliberately doesn't restrict itself to the current level the way the
+ * folder browser on the home screen does.
+ */
+@Composable
+private fun FolderPickerDialog(
+    title: String,
+    folders: List<com.personal.docscanner.data.db.FolderEntity>,
+    currentFolderId: String?,
+    onPick: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val byParent = remember(folders) { folders.groupBy { it.parentId } }
+
+    fun depthOf(folder: com.personal.docscanner.data.db.FolderEntity): Int {
+        var depth = 0
+        var parentId = folder.parentId
+        val seen = HashSet<String>()
+        while (parentId != null && seen.add(parentId)) {
+            val parent = folders.firstOrNull { it.id == parentId } ?: break
+            depth++
+            parentId = parent.parentId
+        }
+        return depth
+    }
+
+    // A pre-order walk keeps children directly under their own parent instead
+    // of grouped by depth, so the indentation actually reads as a tree.
+    val ordered = remember(folders) {
+        val result = ArrayList<com.personal.docscanner.data.db.FolderEntity>()
+        fun walk(parentId: String?) {
+            byParent[parentId].orEmpty().forEach { folder ->
+                result.add(folder)
+                walk(folder.id)
+            }
+        }
+        walk(null)
+        result
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                item {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.root_folder)) },
+                        leadingIcon = { Icon(Icons.Default.Folder, null) },
+                        enabled = currentFolderId != null,
+                        onClick = { onPick(null) }
+                    )
+                }
+                items(ordered, key = { it.id }) { folder ->
+                    DropdownMenuItem(
+                        text = { Text(folder.name) },
+                        leadingIcon = { Icon(Icons.Default.Folder, null) },
+                        enabled = folder.id != currentFolderId,
+                        onClick = { onPick(folder.id) },
+                        modifier = Modifier.padding(start = (depthOf(folder) * 16).dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
 }
 
 @Composable
@@ -572,7 +664,9 @@ private fun DocumentRow(
     summary: DocumentSummary,
     onOpen: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onMove: () -> Unit,
+    onCopy: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
 
@@ -639,6 +733,16 @@ private fun DocumentRow(
                     Icon(Icons.Default.MoreVert, stringResource(R.string.more))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.move_to_folder)) },
+                        leadingIcon = { Icon(Icons.Default.DriveFileMove, null) },
+                        onClick = { menuOpen = false; onMove() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.copy_document)) },
+                        leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
+                        onClick = { menuOpen = false; onCopy() }
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.delete)) },
                         leadingIcon = { Icon(Icons.Default.Delete, null) },

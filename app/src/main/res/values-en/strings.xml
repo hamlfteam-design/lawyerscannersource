@@ -107,6 +107,9 @@
     <string name="email_self_hint">example@email.com</string>
     <string name="send">Send</string>
 
+    <string name="move_to_folder">Move to folder</string>
+    <string name="copy_document">Copy document</string>
+
     <string name="custom_fields">Save fields</string>
     <string name="custom_fields_desc">Define the fields you fill in for each document, and scope them to a folder if you like.</string>
     <string name="new_field">New field</string>

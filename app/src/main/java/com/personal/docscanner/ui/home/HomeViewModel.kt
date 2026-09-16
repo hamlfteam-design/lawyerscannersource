@@ -48,6 +48,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         .flatMapLatest { repo.observeFolders(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Every folder in the library, flat — the source list for the move/copy folder picker. */
+    val allFolders: StateFlow<List<com.personal.docscanner.data.db.FolderEntity>> =
+        repo.observeAllFolders()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val documents: StateFlow<List<DocumentSummary>> =
         combine(_folderId, _query, prefs.settings) { folderId, query, settings ->
@@ -127,6 +132,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun moveDocument(id: String, folderId: String?) {
         viewModelScope.launch { repo.moveDocument(id, folderId) }
+    }
+
+    /** Copies a document in place — same folder, a second independent record. */
+    fun duplicateDocument(id: String, folderId: String?) {
+        viewModelScope.launch { repo.duplicateDocument(id, folderId) }
     }
 
     fun toggleFavorite(summary: DocumentSummary) {

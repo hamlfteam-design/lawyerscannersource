@@ -121,6 +121,10 @@
     <string name="email_self_hint">example@email.com</string>
     <string name="send">إرسال</string>
 
+    <!-- Move/copy -->
+    <string name="move_to_folder">نقل إلى مجلد</string>
+    <string name="copy_document">نسخ المستند</string>
+
     <!-- Custom fields -->
     <string name="custom_fields">حقول الحفظ</string>
     <string name="custom_fields_desc">عرّف الحقول اللي بتملاها مع كل مستند، واربطها بمجلد معيّن لو حبيت.</string>
