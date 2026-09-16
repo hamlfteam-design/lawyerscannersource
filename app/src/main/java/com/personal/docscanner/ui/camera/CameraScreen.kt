@@ -115,6 +115,7 @@ fun CameraScreen(
     val lastThumb by scanViewModel.lastPageThumb.collectAsState()
     val idCardMode by scanViewModel.idCardMode.collectAsState()
     val idCardFrontPending by scanViewModel.idCardFrontPending.collectAsState()
+    val quickOcr by scanViewModel.quickOcr.collectAsState()
 
     var hasPermission by remember {
         mutableStateOf(
@@ -217,6 +218,30 @@ fun CameraScreen(
             IdCardToggle(
                 active = idCardMode,
                 onClick = { scanViewModel.setIdCardMode(!idCardMode) }
+            )
+            Spacer(Modifier.size(4.dp))
+            // Reads the text off whatever is in frame right now, without
+            // joining it to the document being scanned — the quick "what does
+            // this say" action that used to mean finishing a whole scan first
+            // just to reach OCR in the document's own menu.
+            OcrQuickButton(
+                enabled = !busy && !saving && quickOcr == null,
+                onClick = {
+                    val capture = imageCapture.value ?: return@OcrQuickButton
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    capture.takePicture(
+                        ContextCompat.getMainExecutor(context),
+                        object : ImageCapture.OnImageCapturedCallback() {
+                            override fun onCaptureSuccess(image: ImageProxy) {
+                                val bitmap = image.toRotatedBitmap()
+                                image.close()
+                                if (bitmap != null) scanViewModel.quickOcr(bitmap)
+                            }
+
+                            override fun onError(exception: ImageCaptureException) {}
+                        }
+                    )
+                }
             )
             Spacer(Modifier.size(4.dp))
             IconButton(
@@ -381,6 +406,14 @@ fun CameraScreen(
         }
 
         if (busy) LoadingOverlay()
+
+        quickOcr?.let { state ->
+            QuickOcrDialog(
+                state = state,
+                onDownload = { scanViewModel.downloadQuickOcrLanguages() },
+                onDismiss = { scanViewModel.dismissQuickOcr() }
+            )
+        }
     }
 
     DisposableEffect(Unit) {
@@ -470,6 +503,93 @@ private fun IdCardToggle(active: Boolean, onClick: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * Reads the text off whatever is in frame, without the two-step trip through
+ * finishing a scan and opening its OCR menu item. Same "letters" badge style
+ * as [IdCardToggle], for the same reason: no scanner-specific glyph in the
+ * icon pack this app already depends on.
+ */
+@Composable
+private fun OcrQuickButton(enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.Black.copy(alpha = 0.35f)),
+        contentAlignment = Alignment.Center
+    ) {
+        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(40.dp)) {
+            Text(
+                text = "OCR",
+                color = if (enabled) Color.White else Color.White.copy(alpha = 0.4f),
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+/**
+ * Result of a quick-OCR shot: running, the recognised text (with a copy
+ * button), a prompt to download the language pack the first time, or an
+ * error — all as one dialog so the camera behind it stays visible and ready
+ * for the next shot the moment this is dismissed.
+ */
+@Composable
+private fun QuickOcrDialog(
+    state: ScanViewModel.QuickOcr,
+    onDownload: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { if (state !is ScanViewModel.QuickOcr.Running) onDismiss() },
+        confirmButton = {
+            when (state) {
+                is ScanViewModel.QuickOcr.Done -> {
+                    androidx.compose.material3.TextButton(onClick = {
+                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(state.text))
+                        onDismiss()
+                    }) { Text(stringResource(R.string.ocr_copy)) }
+                }
+                is ScanViewModel.QuickOcr.MissingLanguages -> {
+                    androidx.compose.material3.TextButton(onClick = onDownload) {
+                        Text(stringResource(R.string.ocr_download))
+                    }
+                }
+                else -> {
+                    androidx.compose.material3.TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        },
+        dismissButton = when (state) {
+            is ScanViewModel.QuickOcr.Running -> null
+            is ScanViewModel.QuickOcr.Done -> null
+            else -> {
+                {
+                    androidx.compose.material3.TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        },
+        title = { Text(stringResource(R.string.ocr)) },
+        text = {
+            when (state) {
+                is ScanViewModel.QuickOcr.Running -> Text(stringResource(R.string.ocr_running))
+                is ScanViewModel.QuickOcr.Done -> Text(
+                    if (state.text.isBlank()) stringResource(R.string.ocr_empty) else state.text
+                )
+                is ScanViewModel.QuickOcr.MissingLanguages -> Text(stringResource(R.string.ocr_lang_missing))
+                is ScanViewModel.QuickOcr.Failed -> Text(
+                    stringResource(R.string.ocr_download_failed, state.message)
+                )
+            }
+        }
+    )
 }
 
 @Composable

@@ -53,7 +53,10 @@ class OcrEngine(context: Context) {
                 coroutineContext.ensureActive()
                 onProgress(index + 1, pageFiles.size)
 
-                val bitmap = loadForOcr(file) ?: return@forEachIndexed
+                val decoded = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+                    ?: return@forEachIndexed
+                val bitmap = prepareForOcr(decoded)
+                if (bitmap !== decoded) decoded.recycle()
                 try {
                     api.setImage(bitmap)
                     val text = api.getUTF8Text()?.trim().orEmpty()
@@ -76,15 +79,40 @@ class OcrEngine(context: Context) {
     }
 
     /**
+     * Recognises text in a single bitmap straight from memory — the camera
+     * screen's quick "extract text" action, which has a shot still in hand and
+     * nothing on disk yet to hand [recognize] a file for.
+     */
+    suspend fun recognizeBitmap(bitmap: Bitmap, languageSpec: String): Result =
+        withContext(Dispatchers.Default) {
+            val missing = tessData.missing(languageSpec)
+            if (missing.isNotEmpty()) return@withContext Result.MissingLanguages(missing)
+
+            val api = TessBaseAPI()
+            val prepared = prepareForOcr(bitmap)
+            try {
+                if (!api.init(tessData.dataPath.absolutePath, languageSpec)) {
+                    return@withContext Result.Failure("Tesseract init failed for '$languageSpec'")
+                }
+                api.pageSegMode = TessBaseAPI.PageSegMode.PSM_AUTO_OSD
+                api.setImage(prepared)
+                Result.Success(api.getUTF8Text()?.trim().orEmpty())
+            } catch (t: Throwable) {
+                Result.Failure(t.message ?: t::class.java.simpleName)
+            } finally {
+                runCatching { api.recycle() }
+                if (prepared !== bitmap) prepared.recycle()
+            }
+        }
+
+    /**
      * Tesseract wants a reasonably large, high-contrast image; feeding it the
      * full 12-megapixel capture is slower without being more accurate.
      */
-    private fun loadForOcr(file: File): Bitmap? {
-        val decoded = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return null
-        val limited = ImageProcessor.limitSize(decoded, OCR_MAX_EDGE)
-        if (limited !== decoded) decoded.recycle()
+    private fun prepareForOcr(bitmap: Bitmap): Bitmap {
+        val limited = ImageProcessor.limitSize(bitmap, OCR_MAX_EDGE)
         val sharpened = ImageProcessor.sharpenForOcr(limited)
-        if (sharpened !== limited) limited.recycle()
+        if (sharpened !== limited && limited !== bitmap) limited.recycle()
         return sharpened
     }
 

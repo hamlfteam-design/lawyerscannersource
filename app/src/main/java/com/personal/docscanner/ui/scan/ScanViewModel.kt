@@ -11,6 +11,7 @@ import com.personal.docscanner.data.model.PageFilter
 import com.personal.docscanner.scan.DocumentFormat
 import com.personal.docscanner.scan.EdgeDetector
 import com.personal.docscanner.scan.ImageProcessor
+import com.personal.docscanner.scan.OcrEngine
 import com.personal.docscanner.scan.Quad
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,8 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = (app as DocScannerApp).repository
     private val prefs = (app as DocScannerApp).prefs
+    private val ocr = (app as DocScannerApp).ocr
+    private val tessData = (app as DocScannerApp).tessData
 
     data class Session(
         /** Where a newly created document should land. */
@@ -290,6 +293,87 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // --------------------------------------------------------- quick OCR
+
+    /** State of the camera screen's "extract text now" action. */
+    sealed interface QuickOcr {
+        data object Running : QuickOcr
+        data class Done(val text: String) : QuickOcr
+        data class MissingLanguages(val languages: List<String>) : QuickOcr
+        data class Failed(val message: String) : QuickOcr
+    }
+
+    private val _quickOcr = MutableStateFlow<QuickOcr?>(null)
+    val quickOcr: StateFlow<QuickOcr?> = _quickOcr.asStateFlow()
+
+    /**
+     * Held only across a [QuickOcr.MissingLanguages] result, so
+     * [downloadQuickOcrLanguages] can retry the very shot that produced it once
+     * the language pack lands, without the camera screen having to keep its
+     * own copy of a bitmap this view model already owns.
+     */
+    private var pendingQuickOcrBitmap: Bitmap? = null
+
+    /**
+     * A dedicated shutter press that never joins the document: shoot, crop to
+     * whatever page or card is in frame, and read the text off it right away.
+     * For a quick "what does this say" moment there is no reason to make the
+     * user finish a whole scanning session first just to reach the OCR menu
+     * item on the saved document.
+     *
+     * A [QuickOcr.MissingLanguages] result leaves [bitmap] un-recycled (see
+     * [pendingQuickOcrBitmap]); every other outcome recycles it here.
+     */
+    fun quickOcr(bitmap: Bitmap) {
+        viewModelScope.launch {
+            _quickOcr.value = QuickOcr.Running
+            var recycleBitmap = true
+            try {
+                val langs = prefs.settings.first().ocrLanguages
+                val cropped = withContext(Dispatchers.Default) {
+                    val quad = EdgeDetector.detect(bitmap)
+                    if (quad != null) ImageProcessor.warp(bitmap, quad) else bitmap
+                }
+                _quickOcr.value = when (val result = ocr.recognizeBitmap(cropped, langs)) {
+                    is OcrEngine.Result.Success -> QuickOcr.Done(result.text)
+                    is OcrEngine.Result.MissingLanguages -> {
+                        recycleBitmap = false
+                        pendingQuickOcrBitmap = bitmap
+                        QuickOcr.MissingLanguages(result.languages)
+                    }
+                    is OcrEngine.Result.Failure -> QuickOcr.Failed(result.message)
+                }
+                if (cropped !== bitmap) cropped.recycle()
+            } catch (t: Throwable) {
+                _quickOcr.value = QuickOcr.Failed(t.message ?: "OCR failed")
+            } finally {
+                if (recycleBitmap) bitmap.recycle()
+            }
+        }
+    }
+
+    /** Downloads the missing language data, then retries the shot that asked for it. */
+    fun downloadQuickOcrLanguages() {
+        val bitmap = pendingQuickOcrBitmap ?: return
+        pendingQuickOcrBitmap = null
+        viewModelScope.launch {
+            _quickOcr.value = QuickOcr.Running
+            val langs = prefs.settings.first().ocrLanguages
+            runCatching { tessData.download(langs) }
+                .onSuccess { quickOcr(bitmap) }
+                .onFailure {
+                    _quickOcr.value = QuickOcr.Failed(it.message ?: "download failed")
+                    bitmap.recycle()
+                }
+        }
+    }
+
+    fun dismissQuickOcr() {
+        pendingQuickOcrBitmap?.recycle()
+        pendingQuickOcrBitmap = null
+        _quickOcr.value = null
+    }
+
     fun updateQuad(quad: Quad) {
         _pending.value = _pending.value?.copy(quad = quad)
     }
@@ -478,6 +562,7 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         super.onCleared()
         _pending.value?.bitmap?.let { if (!it.isRecycled) it.recycle() }
+        pendingQuickOcrBitmap?.let { if (!it.isRecycled) it.recycle() }
     }
 
     @Suppress("unused")
