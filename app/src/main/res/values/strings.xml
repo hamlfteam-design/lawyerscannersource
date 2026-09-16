@@ -115,6 +115,12 @@
     <string name="wifi_transfer_copy_link">نسخ الرابط</string>
     <string name="wifi_transfer_stop">إيقاف الإرسال</string>
 
+    <!-- Email to self -->
+    <string name="email_self">بريد إلكتروني إلى نفسي</string>
+    <string name="email_self_prompt">اكتب إيميلك عشان نبعتلك عليه (هيتحفظ للمرات الجاية)</string>
+    <string name="email_self_hint">example@email.com</string>
+    <string name="send">إرسال</string>
+
     <!-- Custom fields -->
     <string name="custom_fields">حقول الحفظ</string>
     <string name="custom_fields_desc">عرّف الحقول اللي بتملاها مع كل مستند، واربطها بمجلد معيّن لو حبيت.</string>

@@ -102,6 +102,11 @@
     <string name="wifi_transfer_copy_link">Copy link</string>
     <string name="wifi_transfer_stop">Stop sending</string>
 
+    <string name="email_self">Email to myself</string>
+    <string name="email_self_prompt">Enter your email so we can send to it (saved for next time)</string>
+    <string name="email_self_hint">example@email.com</string>
+    <string name="send">Send</string>
+
     <string name="custom_fields">Save fields</string>
     <string name="custom_fields_desc">Define the fields you fill in for each document, and scope them to a folder if you like.</string>
     <string name="new_field">New field</string>

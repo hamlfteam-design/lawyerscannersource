@@ -115,6 +115,8 @@ fun DocumentScreen(
     val missingLangs by viewModel.ocrMissingLangs.collectAsState()
     val summary by viewModel.summary.collectAsState()
     val wifiTransfer by viewModel.wifiTransfer.collectAsState()
+    val needsSelfEmail by viewModel.needsSelfEmail.collectAsState()
+    val emailReady by viewModel.emailReady.collectAsState()
 
     val snackbar = remember { SnackbarHostState() }
     var menuOpen by remember { mutableStateOf(false) }
@@ -135,6 +137,13 @@ fun DocumentScreen(
     // opening the sheet the moment one lands is what the user is waiting for.
     LaunchedEffect(shareFile) {
         if (shareFile != null) showShare = true
+    }
+
+    LaunchedEffect(emailReady) {
+        emailReady?.let { ready ->
+            ShareHelper.emailTo(context, ready.recipient, ready.subject, ready.file)
+            viewModel.consumeEmailReady()
+        }
     }
 
     val doc = detail
@@ -192,6 +201,10 @@ fun DocumentScreen(
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.wifi_transfer)) },
                             onClick = { menuOpen = false; viewModel.startWifiTransfer() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.email_self)) },
+                            onClick = { menuOpen = false; viewModel.requestEmailToSelf() }
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
@@ -521,6 +534,41 @@ fun DocumentScreen(
                     TextButton(onClick = viewModel::dismissSummary) {
                         Text(stringResource(R.string.cancel))
                     }
+                }
+            }
+        )
+    }
+
+    if (needsSelfEmail) {
+        var email by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = viewModel::dismissSelfEmailPrompt,
+            title = { Text(stringResource(R.string.email_self)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.email_self_prompt))
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        placeholder = { Text(stringResource(R.string.email_self_hint)) },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = KeyboardType.Email
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.setSelfEmailAndSend(email.trim()) },
+                    enabled = email.contains("@")
+                ) { Text(stringResource(R.string.send)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissSelfEmailPrompt) {
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

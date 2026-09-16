@@ -74,6 +74,37 @@ object ShareHelper {
         }
     }
 
+    /**
+     * Opens an email compose screen addressed to [recipient] with [file]
+     * attached — "بريد إلكتروني إلى نفسي" being the recurring case, though any
+     * address works. `message/rfc822` is what routes an ACTION_SEND to mail
+     * apps specifically instead of the full share sheet WhatsApp and Drive
+     * also answer to.
+     *
+     * @return false if nothing on the device handles mail composition, so the
+     *   caller can fall back to the general chooser instead of a dead tap.
+     */
+    fun emailTo(
+        context: Context,
+        recipient: String,
+        subject: String,
+        file: File
+    ): Boolean {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "message/rfc822"
+            putExtra(Intent.EXTRA_EMAIL, arrayOf(recipient))
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_STREAM, uriFor(context, file))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        return try {
+            context.startActivity(Intent.createChooser(intent, subject).withNewTask())
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
+    }
+
     /** The system chooser — email, Drive, Bluetooth, anything registered. */
     fun share(
         context: Context,

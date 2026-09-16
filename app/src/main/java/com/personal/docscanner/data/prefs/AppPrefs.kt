@@ -36,7 +36,10 @@ data class Settings(
     val lastBackupName: String = "",
     val lastBackupAt: Long = 0L,
     /** Goes into the file name, so backups from two phones stay apart. */
-    val backupLabel: String = ""
+    val backupLabel: String = "",
+
+    /** Pre-fills the recipient for "بريد إلكتروني إلى نفسي" so it's a one-tap send after the first time. */
+    val selfEmail: String = ""
 )
 
 class AppPrefs(private val context: Context) {
@@ -59,7 +62,8 @@ class AppPrefs(private val context: Context) {
         lastBackupUri = this[KEY_BACKUP_URI] ?: "",
         lastBackupName = this[KEY_BACKUP_NAME] ?: "",
         lastBackupAt = this[KEY_BACKUP_AT] ?: 0L,
-        backupLabel = this[KEY_BACKUP_LABEL] ?: ""
+        backupLabel = this[KEY_BACKUP_LABEL] ?: "",
+        selfEmail = this[KEY_SELF_EMAIL] ?: ""
     )
 
     suspend fun setAppLock(enabled: Boolean) = put(KEY_APP_LOCK, enabled)
@@ -71,6 +75,7 @@ class AppPrefs(private val context: Context) {
     suspend fun setGridView(grid: Boolean) = put(KEY_GRID, grid)
     suspend fun setAutoCapture(auto: Boolean) = put(KEY_AUTO_CAPTURE, auto)
     suspend fun setBackupLabel(label: String) = put(KEY_BACKUP_LABEL, label.trim())
+    suspend fun setSelfEmail(email: String) = put(KEY_SELF_EMAIL, email.trim())
 
     suspend fun rememberBackup(uri: String, name: String, at: Long) {
         context.dataStore.edit {
@@ -106,5 +111,6 @@ class AppPrefs(private val context: Context) {
         val KEY_BACKUP_NAME = stringPreferencesKey("last_backup_name")
         val KEY_BACKUP_AT = longPreferencesKey("last_backup_at")
         val KEY_BACKUP_LABEL = stringPreferencesKey("backup_label")
+        val KEY_SELF_EMAIL = stringPreferencesKey("self_email")
     }
 }

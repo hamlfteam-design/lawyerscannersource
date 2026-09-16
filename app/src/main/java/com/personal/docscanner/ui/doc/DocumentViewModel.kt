@@ -384,6 +384,65 @@ class DocumentViewModel(app: Application) : AndroidViewModel(app) {
         _wifiTransfer.value = null
     }
 
+    // -------------------------------------------------------- email to self
+
+    /** True once the recipient is asked for, because none is saved yet. */
+    private val _needsSelfEmail = MutableStateFlow(false)
+    val needsSelfEmail: StateFlow<Boolean> = _needsSelfEmail.asStateFlow()
+
+    data class EmailReady(val recipient: String, val subject: String, val file: File)
+
+    private val _emailReady = MutableStateFlow<EmailReady?>(null)
+    val emailReady: StateFlow<EmailReady?> = _emailReady.asStateFlow()
+
+    /**
+     * "بريد إلكتروني إلى نفسي": the first time, there is no saved address to
+     * send to, so this asks for one via [needsSelfEmail] instead of failing
+     * silently or opening a blank compose screen; every time after, it is a
+     * single tap straight to a filled-in draft.
+     */
+    fun requestEmailToSelf() {
+        viewModelScope.launch {
+            val email = prefs.settings.first().selfEmail
+            if (email.isBlank()) {
+                _needsSelfEmail.value = true
+            } else {
+                buildEmailDraft(email)
+            }
+        }
+    }
+
+    fun setSelfEmailAndSend(email: String) {
+        _needsSelfEmail.value = false
+        if (email.isBlank()) return
+        viewModelScope.launch {
+            prefs.setSelfEmail(email)
+            buildEmailDraft(email)
+        }
+    }
+
+    fun dismissSelfEmailPrompt() {
+        _needsSelfEmail.value = false
+    }
+
+    private suspend fun buildEmailDraft(recipient: String) {
+        _busy.value = EXPORTING
+        val pdf = runCatching {
+            val s = prefs.settings.first()
+            repo.buildPdf(_documentId.value, s.pdfPageSize, s.pdfQuality)
+        }.getOrNull()
+        _busy.value = null
+        if (pdf != null) {
+            _emailReady.value = EmailReady(recipient, _detail.value?.doc?.title.orEmpty(), pdf)
+        } else {
+            _message.value = "failed"
+        }
+    }
+
+    fun consumeEmailReady() {
+        _emailReady.value = null
+    }
+
     fun consumeMessage() {
         _message.value = null
     }
