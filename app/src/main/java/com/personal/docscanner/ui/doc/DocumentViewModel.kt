@@ -11,6 +11,7 @@ import com.personal.docscanner.data.model.PdfPageSize
 import com.personal.docscanner.data.storage.StorageManager
 import com.personal.docscanner.scan.OcrEngine
 import com.personal.docscanner.scan.PdfCompressor
+import com.personal.docscanner.scan.Summarizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,6 +47,15 @@ class DocumentViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _ocrMissingLangs = MutableStateFlow<List<String>>(emptyList())
     val ocrMissingLangs: StateFlow<List<String>> = _ocrMissingLangs.asStateFlow()
+
+    sealed interface SummaryState {
+        data class Done(val text: String) : SummaryState
+        data object NeedsOcr : SummaryState
+        data object Empty : SummaryState
+    }
+
+    private val _summary = MutableStateFlow<SummaryState?>(null)
+    val summary: StateFlow<SummaryState?> = _summary.asStateFlow()
 
     private val _detail = MutableStateFlow<DocumentDetail?>(null)
     val detail: StateFlow<DocumentDetail?> = _detail.asStateFlow()
@@ -298,6 +308,32 @@ class DocumentViewModel(app: Application) : AndroidViewModel(app) {
         _ocrMissingLangs.value = emptyList()
     }
 
+    // -------------------------------------------------------------- summary
+
+    /**
+     * Summarizes the document's already-extracted OCR text. Reuses [OCR]
+     * rather than a state of its own: this genuinely is the same "working"
+     * moment as OCR to the UI, and the two never run at once since summarizing
+     * finishes in milliseconds once the text exists.
+     */
+    fun summarize() {
+        viewModelScope.launch {
+            val text = _detail.value?.doc?.ocrText.orEmpty()
+            if (text.isBlank()) {
+                _summary.value = SummaryState.NeedsOcr
+                return@launch
+            }
+            _busy.value = SUMMARIZE
+            val result = withContext(Dispatchers.Default) { Summarizer.summarize(text) }
+            _summary.value = if (result.isNullOrBlank()) SummaryState.Empty else SummaryState.Done(result)
+            _busy.value = null
+        }
+    }
+
+    fun dismissSummary() {
+        _summary.value = null
+    }
+
     fun consumeMessage() {
         _message.value = null
     }
@@ -309,5 +345,6 @@ class DocumentViewModel(app: Application) : AndroidViewModel(app) {
         const val DOWNLOADING = "downloading"
         const val FILTERING = "filtering"
         const val OCR_EMPTY = "ocr_empty"
+        const val SUMMARIZE = "summarize"
     }
 }

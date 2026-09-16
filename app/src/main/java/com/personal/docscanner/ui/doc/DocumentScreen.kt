@@ -113,6 +113,7 @@ fun DocumentScreen(
     val message by viewModel.message.collectAsState()
     val shareFile by viewModel.shareFile.collectAsState()
     val missingLangs by viewModel.ocrMissingLangs.collectAsState()
+    val summary by viewModel.summary.collectAsState()
 
     val snackbar = remember { SnackbarHostState() }
     var menuOpen by remember { mutableStateOf(false) }
@@ -180,6 +181,10 @@ fun DocumentScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.export_text)) },
                                 onClick = { menuOpen = false; viewModel.exportText() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.summarize)) },
+                                onClick = { menuOpen = false; viewModel.summarize() }
                             )
                         }
                         HorizontalDivider()
@@ -351,6 +356,7 @@ fun DocumentScreen(
                         DocumentViewModel.COMPRESSING -> stringResource(R.string.compress_running)
                         DocumentViewModel.OCR -> stringResource(R.string.ocr_running)
                         DocumentViewModel.DOWNLOADING -> stringResource(R.string.ocr_downloading)
+                        DocumentViewModel.SUMMARIZE -> stringResource(R.string.summarize_running)
                         else -> stringResource(R.string.export)
                     },
                     progress = progress
@@ -415,6 +421,35 @@ fun DocumentScreen(
             dismissButton = {
                 TextButton(onClick = viewModel::dismissOcrPrompt) {
                     Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    summary?.let { state ->
+        val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+        AlertDialog(
+            onDismissRequest = viewModel::dismissSummary,
+            title = { Text(stringResource(R.string.summarize)) },
+            text = {
+                Text(
+                    when (state) {
+                        is DocumentViewModel.SummaryState.Done -> state.text
+                        DocumentViewModel.SummaryState.NeedsOcr -> stringResource(R.string.summarize_needs_ocr)
+                        DocumentViewModel.SummaryState.Empty -> stringResource(R.string.summarize_empty)
+                    }
+                )
+            },
+            confirmButton = {
+                if (state is DocumentViewModel.SummaryState.Done) {
+                    TextButton(onClick = {
+                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(state.text))
+                        viewModel.dismissSummary()
+                    }) { Text(stringResource(R.string.summarize_copy)) }
+                } else {
+                    TextButton(onClick = viewModel::dismissSummary) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 }
             }
         )

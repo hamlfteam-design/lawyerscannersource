@@ -98,6 +98,13 @@
     <string name="ocr_download_failed">التحميل فشل: %1$s</string>
     <string name="ocr_lang">لغة الاستخراج</string>
 
+    <!-- Summary -->
+    <string name="summarize">تلخيص المستند</string>
+    <string name="summarize_running">جاري التلخيص…</string>
+    <string name="summarize_needs_ocr">لازم تستخرج النص (OCR) الأول قبل التلخيص.</string>
+    <string name="summarize_empty">النص قصير أو مفيش حاجة تتلخص.</string>
+    <string name="summarize_copy">نسخ الملخص</string>
+
     <!-- Custom fields -->
     <string name="custom_fields">حقول الحفظ</string>
     <string name="custom_fields_desc">عرّف الحقول اللي بتملاها مع كل مستند، واربطها بمجلد معيّن لو حبيت.</string>

@@ -87,6 +87,12 @@
     <string name="ocr_download_failed">Download failed: %1$s</string>
     <string name="ocr_lang">OCR language</string>
 
+    <string name="summarize">Summarize document</string>
+    <string name="summarize_running">Summarizing…</string>
+    <string name="summarize_needs_ocr">Extract text (OCR) first before summarizing.</string>
+    <string name="summarize_empty">Text is too short or has nothing to summarize.</string>
+    <string name="summarize_copy">Copy summary</string>
+
     <string name="custom_fields">Save fields</string>
     <string name="custom_fields_desc">Define the fields you fill in for each document, and scope them to a folder if you like.</string>
     <string name="new_field">New field</string>
