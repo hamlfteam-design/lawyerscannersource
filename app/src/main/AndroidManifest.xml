@@ -18,11 +18,15 @@
         android:maxSdkVersion="28" />
 
     <!--
-      The scanner itself never talks to a network. INTERNET is used for exactly one
-      optional, user-initiated action: downloading the offline OCR language data
-      the first time OCR is used. See TessDataManager.
+      The scanner talks to a network in exactly two optional, user-initiated
+      cases: downloading the offline OCR language data the first time OCR is
+      used (see TessDataManager), and the local-only HTTP server behind
+      "إرسال للكمبيوتر" (see WifiTransferServer), which never leaves the LAN
+      and answers no one who wasn't handed its address.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
       Android 11+ hides installed packages by default. Without this block,

@@ -107,6 +107,14 @@
     <string name="summarize_copy">نسخ الملخص</string>
     <string name="reading_mode">وضع القراءة</string>
 
+    <!-- Wi-Fi transfer -->
+    <string name="wifi_transfer">إرسال للكمبيوتر (Wi-Fi)</string>
+    <string name="wifi_transfer_hint">افتح المتصفح على نفس شبكة الواي فاي واكتب الرابط ده:</string>
+    <string name="wifi_transfer_served">تم فتح الملف على الكمبيوتر. سيب النافذة دي لو عايز ترسله تاني.</string>
+    <string name="wifi_transfer_unavailable">مش لاقي شبكة واي فاي متصلة. اتأكد إن الموبايل والكمبيوتر على نفس الشبكة.</string>
+    <string name="wifi_transfer_copy_link">نسخ الرابط</string>
+    <string name="wifi_transfer_stop">إيقاف الإرسال</string>
+
     <!-- Custom fields -->
     <string name="custom_fields">حقول الحفظ</string>
     <string name="custom_fields_desc">عرّف الحقول اللي بتملاها مع كل مستند، واربطها بمجلد معيّن لو حبيت.</string>

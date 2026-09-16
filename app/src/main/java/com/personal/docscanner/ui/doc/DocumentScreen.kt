@@ -114,6 +114,7 @@ fun DocumentScreen(
     val shareFile by viewModel.shareFile.collectAsState()
     val missingLangs by viewModel.ocrMissingLangs.collectAsState()
     val summary by viewModel.summary.collectAsState()
+    val wifiTransfer by viewModel.wifiTransfer.collectAsState()
 
     val snackbar = remember { SnackbarHostState() }
     var menuOpen by remember { mutableStateOf(false) }
@@ -188,6 +189,10 @@ fun DocumentScreen(
                                 onClick = { menuOpen = false; viewModel.summarize() }
                             )
                         }
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.wifi_transfer)) },
+                            onClick = { menuOpen = false; viewModel.startWifiTransfer() }
+                        )
                         HorizontalDivider()
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.delete)) },
@@ -443,6 +448,53 @@ fun DocumentScreen(
 
     if (showReadingMode && doc != null) {
         ReadingModeScreen(text = doc.doc.ocrText, onDismiss = { showReadingMode = false })
+    }
+
+    wifiTransfer?.let { state ->
+        val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+        AlertDialog(
+            onDismissRequest = viewModel::stopWifiTransfer,
+            title = { Text(stringResource(R.string.wifi_transfer)) },
+            text = {
+                Column {
+                    when (state) {
+                        is DocumentViewModel.WifiTransferState.Ready -> {
+                            Text(stringResource(R.string.wifi_transfer_hint))
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = state.url,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.horizontalScroll(rememberScrollState())
+                            )
+                        }
+                        DocumentViewModel.WifiTransferState.Served ->
+                            Text(stringResource(R.string.wifi_transfer_served))
+                        DocumentViewModel.WifiTransferState.Unavailable ->
+                            Text(stringResource(R.string.wifi_transfer_unavailable))
+                    }
+                }
+            },
+            confirmButton = {
+                if (state is DocumentViewModel.WifiTransferState.Ready) {
+                    TextButton(onClick = {
+                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(state.url))
+                    }) { Text(stringResource(R.string.wifi_transfer_copy_link)) }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::stopWifiTransfer) {
+                    Text(
+                        stringResource(
+                            if (state is DocumentViewModel.WifiTransferState.Unavailable) {
+                                R.string.cancel
+                            } else {
+                                R.string.wifi_transfer_stop
+                            }
+                        )
+                    )
+                }
+            }
+        )
     }
 
     summary?.let { state ->

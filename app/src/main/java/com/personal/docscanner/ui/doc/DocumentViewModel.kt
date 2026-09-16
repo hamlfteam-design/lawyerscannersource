@@ -9,6 +9,7 @@ import com.personal.docscanner.data.model.DocumentDetail
 import com.personal.docscanner.data.model.PageFilter
 import com.personal.docscanner.data.model.PdfPageSize
 import com.personal.docscanner.data.storage.StorageManager
+import com.personal.docscanner.net.WifiTransferServer
 import com.personal.docscanner.scan.OcrEngine
 import com.personal.docscanner.scan.PdfCompressor
 import com.personal.docscanner.scan.Summarizer
@@ -334,8 +335,62 @@ class DocumentViewModel(app: Application) : AndroidViewModel(app) {
         _summary.value = null
     }
 
+    // ------------------------------------------------------- Wi-Fi transfer
+
+    sealed interface WifiTransferState {
+        data class Ready(val url: String) : WifiTransferState
+        data object Served : WifiTransferState
+        data object Unavailable : WifiTransferState
+    }
+
+    private val _wifiTransfer = MutableStateFlow<WifiTransferState?>(null)
+    val wifiTransfer: StateFlow<WifiTransferState?> = _wifiTransfer.asStateFlow()
+
+    private var wifiServer: WifiTransferServer? = null
+
+    /**
+     * Builds the document's PDF and serves it from an in-process HTTP server,
+     * so a computer on the same Wi-Fi can pull it into a browser without a
+     * cable, an email, or leaving the local network at all.
+     */
+    fun startWifiTransfer() {
+        viewModelScope.launch {
+            _busy.value = EXPORTING
+            val pdf = runCatching {
+                val s = prefs.settings.first()
+                repo.buildPdf(_documentId.value, s.pdfPageSize, s.pdfQuality)
+            }.getOrNull()
+            _busy.value = null
+
+            if (pdf == null) {
+                _wifiTransfer.value = WifiTransferState.Unavailable
+                return@launch
+            }
+            val server = WifiTransferServer(pdf, pdf.name)
+            server.onServed = { _wifiTransfer.value = WifiTransferState.Served }
+            val info = server.start()
+            if (info == null) {
+                _wifiTransfer.value = WifiTransferState.Unavailable
+                return@launch
+            }
+            wifiServer = server
+            _wifiTransfer.value = WifiTransferState.Ready(info.url)
+        }
+    }
+
+    fun stopWifiTransfer() {
+        wifiServer?.stop()
+        wifiServer = null
+        _wifiTransfer.value = null
+    }
+
     fun consumeMessage() {
         _message.value = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        wifiServer?.stop()
     }
 
     companion object {
