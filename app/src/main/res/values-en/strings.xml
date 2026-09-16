@@ -44,6 +44,7 @@
     <string name="filter_gray">Grayscale</string>
     <string name="filter_bw">Black &amp; white</string>
     <string name="filter_lighten">Lighten</string>
+    <string name="filter_economy">Saver</string>
     <string name="filters">Filters</string>
     <string name="brightness">Brightness</string>
     <string name="contrast">Contrast</string>

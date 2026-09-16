@@ -52,6 +52,7 @@
     <string name="filter_gray">تدرّج رمادي</string>
     <string name="filter_bw">أبيض وأسود</string>
     <string name="filter_lighten">تفتيح</string>
+    <string name="filter_economy">توفير</string>
     <string name="filters">الفلاتر</string>
     <string name="brightness">السطوع</string>
     <string name="contrast">التباين</string>

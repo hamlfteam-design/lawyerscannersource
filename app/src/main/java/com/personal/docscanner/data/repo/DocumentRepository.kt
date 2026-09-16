@@ -430,7 +430,7 @@ class DocumentRepository(
                     contrast = 0,
                     snapTo = null
                 )
-                storage.writeJpeg(storage.pageFile(documentId, page.fileName), processed)
+                storage.writeJpeg(storage.pageFile(documentId, page.fileName), processed, qualityFor(filter))
                 storage.writeThumb(documentId, page.thumbName, processed)
                 if (processed !== original) processed.recycle()
                 pages.update(page.copy(quad = quad?.serialize(), filter = filter.name, processed = true))
@@ -479,7 +479,7 @@ class DocumentRepository(
 
         val processed =
             renderPage(original, newQuad, newFilter, newRotation, newBrightness, newContrast, newSnap)
-        storage.writeJpeg(storage.pageFile(page.documentId, page.fileName), processed)
+        storage.writeJpeg(storage.pageFile(page.documentId, page.fileName), processed, qualityFor(newFilter))
         storage.writeThumb(page.documentId, page.thumbName, processed)
         if (processed !== original) processed.recycle()
         original.recycle()
@@ -518,8 +518,21 @@ class DocumentRepository(
         if (rotated !== warped && warped !== original) warped.recycle()
         val filtered = ImageProcessor.applyFilter(rotated, filter, brightness, contrast)
         if (filtered !== rotated && rotated !== original) rotated.recycle()
-        return filtered
+
+        if (filter != PageFilter.ECONOMY) return filtered
+        val shrunk = ImageProcessor.limitSize(filtered, ECONOMY_MAX_EDGE)
+        if (shrunk !== filtered) filtered.recycle()
+        return shrunk
     }
+
+    /**
+     * JPEG quality to write a page at. Economy trades detail for size on
+     * purpose — a page bound for a WhatsApp message, not for filing — so it
+     * writes noticeably harder than every other filter, which all aim for
+     * "looks like the original" instead.
+     */
+    private fun qualityFor(filter: PageFilter): Int =
+        if (filter == PageFilter.ECONOMY) ECONOMY_JPEG_QUALITY else StorageManager.JPEG_QUALITY
 
     suspend fun deletePage(pageId: String) = withContext(Dispatchers.IO) {
         val page = pages.byId(pageId) ?: return@withContext
@@ -680,6 +693,8 @@ class DocumentRepository(
         private const val MAX_FOLDER_DEPTH = 64
         private const val IMPORT_MAX_EDGE = 3000
         private const val ROOT_CRUMB = "/"
+        private const val ECONOMY_MAX_EDGE = 1400
+        private const val ECONOMY_JPEG_QUALITY = 55
 
         @Volatile
         private var instance: DocumentRepository? = null

@@ -141,6 +141,11 @@ object ImageProcessor {
                 PageFilter.GRAYSCALE -> grayscale(work)
                 PageFilter.BLACK_WHITE -> blackAndWhite(work)
                 PageFilter.LIGHTEN -> lighten(work)
+                // Same look as GRAYSCALE — dropping colour is most of an
+                // "economy" page's size saving on its own — the rest comes
+                // from writing it smaller and at a harder JPEG quality, which
+                // happens where the file is written, not here.
+                PageFilter.ECONOMY -> grayscale(work)
             }
 
             val adjusted = applyBrightnessContrast(filtered, brightness, contrast)

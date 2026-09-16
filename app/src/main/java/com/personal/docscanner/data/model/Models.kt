@@ -32,7 +32,9 @@ enum class PageFilter(@StringRes val labelRes: Int) {
     MAGIC_COLOR(R.string.filter_magic),
     GRAYSCALE(R.string.filter_gray),
     BLACK_WHITE(R.string.filter_bw),
-    LIGHTEN(R.string.filter_lighten);
+    LIGHTEN(R.string.filter_lighten),
+    /** Grayscale plus a smaller, harder-compressed file — a bundle of pages to send over WhatsApp. */
+    ECONOMY(R.string.filter_economy);
 
     companion object {
         fun fromName(name: String): PageFilter =
