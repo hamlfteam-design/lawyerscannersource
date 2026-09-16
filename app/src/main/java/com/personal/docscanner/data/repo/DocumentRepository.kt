@@ -335,7 +335,8 @@ class DocumentRepository(
      * build the two halves of an ID-card page before they are composited.
      */
     private fun renderCardSide(source: Bitmap): Bitmap {
-        val quad = EdgeDetector.detect(source)
+        val quad = EdgeDetector.detect(source, expectedRatio = DocumentFormat.ID_CARD.ratio)
+            ?: Quad.insetForAspect(source.width, source.height, DocumentFormat.ID_CARD.ratio)
         return renderPage(
             original = source,
             quad = quad,
@@ -343,7 +344,7 @@ class DocumentRepository(
             rotation = 0,
             brightness = 0,
             contrast = 0,
-            snapTo = null
+            snapTo = DocumentFormat.ID_CARD
         )
     }
 

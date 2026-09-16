@@ -288,7 +288,17 @@ fun CropScreen(
             detected = detectedFormat,
             onSelect = { format ->
                 commitCorners()
-                scanViewModel.updateSnapFormat(format)
+                if (format != null && format.isKnown) {
+                    // Picking a specific shape (an ID card, a passport) is the
+                    // user telling us what to look for, not just how to label
+                    // whatever was already found — re-detect for that shape so
+                    // a corner set grabbed by the generic full-page pass gets
+                    // replaced rather than merely relabelled.
+                    scanViewModel.autoDetect(format)
+                    scanViewModel.pending.value?.quad?.let { quad = it }
+                } else {
+                    scanViewModel.updateSnapFormat(format)
+                }
             }
         )
 

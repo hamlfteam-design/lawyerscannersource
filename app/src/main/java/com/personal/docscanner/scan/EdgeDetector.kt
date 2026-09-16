@@ -44,6 +44,25 @@ object EdgeDetector {
     private const val MIN_AREA_RATIO = 0.08
 
     /**
+     * Minimum area share used instead of [MIN_AREA_RATIO] when the caller knows
+     * it is looking for something card-sized. An ID card is commonly shot with
+     * a lot of desk around it — nowhere near the 8% floor a full page needs —
+     * so without this the region passes never even produce the card as a
+     * candidate, and whatever large bright/dark shape *does* clear the floor
+     * (the desk, the table edge) wins by default.
+     */
+    private const val MIN_AREA_RATIO_SMALL_SUBJECT = 0.02
+
+    /**
+     * How far a candidate's measured long/short ratio may stray from
+     * [expectedRatio] and still be considered, as a fraction of that ratio.
+     * Wide enough to absorb perspective skew on a hand-held shot, narrow
+     * enough that a table or a whole desk — which rarely happens to share an
+     * ID card's 1.59:1 proportions — is rejected rather than just outscored.
+     */
+    private const val EXPECTED_RATIO_TOLERANCE = 0.35
+
+    /**
      * ...and at most this much. A page held far enough back to photograph never
      * fills the whole frame, so anything larger is the frame border itself, or
      * the background with the page punched out of it.
@@ -92,15 +111,23 @@ object EdgeDetector {
     /**
      * Returns the detected page corners in [bitmap]'s own pixel coordinates,
      * or null when nothing convincing was found.
+     *
+     * @param expectedRatio the subject's known long/short edge ratio (e.g.
+     *   [DocumentFormat.ID_CARD]'s), when the caller knows in advance it is
+     *   looking for something specific rather than an arbitrary page. This
+     *   both lets a much smaller candidate qualify and rejects candidates
+     *   whose shape does not match, instead of scoring every contour as if it
+     *   were a full-page document.
      */
-    fun detect(bitmap: Bitmap): Quad? {
+    fun detect(bitmap: Bitmap, expectedRatio: Float? = null): Quad? {
         if (!OpenCvLoader.ensureLoaded()) return null
 
         val working = shrinkForDetection(bitmap)
         val source = Mat()
         return try {
             Utils.bitmapToMat(working, source)
-            val found = detectInternal(source, working.width, working.height) ?: return null
+            val found = detectInternal(source, working.width, working.height, expectedRatio)
+                ?: return null
             // Back into the caller's own pixel coordinates.
             val factor = bitmap.width.toFloat() / working.width
             found.scaled(factor).clampTo(bitmap.width, bitmap.height)
@@ -128,7 +155,12 @@ object EdgeDetector {
 
     private data class Candidate(val quad: Quad, val score: Double)
 
-    private fun detectInternal(source: Mat, srcWidth: Int, srcHeight: Int): Quad? {
+    private fun detectInternal(
+        source: Mat,
+        srcWidth: Int,
+        srcHeight: Int,
+        expectedRatio: Float? = null
+    ): Quad? {
         val longestEdge = maxOf(srcWidth, srcHeight).toDouble()
         val scale = if (longestEdge > WORK_EDGE) WORK_EDGE / longestEdge else 1.0
         val inverseScale = (1.0 / scale).toFloat()
@@ -148,10 +180,11 @@ object EdgeDetector {
             Imgproc.GaussianBlur(gray, blurred, Size(5.0, 5.0), 0.0)
 
             val frameArea = (work.width() * work.height()).toDouble()
+            val minAreaRatio = if (expectedRatio != null) MIN_AREA_RATIO_SMALL_SUBJECT else MIN_AREA_RATIO
             val candidates = ArrayList<Candidate>()
-            edgeMask(blurred).useMat { candidates += candidatesIn(it, frameArea) }
-            regionMask(blurred, invert = false).useMat { candidates += candidatesIn(it, frameArea) }
-            regionMask(blurred, invert = true).useMat { candidates += candidatesIn(it, frameArea) }
+            edgeMask(blurred).useMat { candidates += candidatesIn(it, frameArea, minAreaRatio, expectedRatio) }
+            regionMask(blurred, invert = false).useMat { candidates += candidatesIn(it, frameArea, minAreaRatio, expectedRatio) }
+            regionMask(blurred, invert = true).useMat { candidates += candidatesIn(it, frameArea, minAreaRatio, expectedRatio) }
 
             candidates.maxByOrNull { it.score }
                 ?.quad
@@ -217,7 +250,12 @@ object EdgeDetector {
 
     // ------------------------------------------------------------- candidates
 
-    private fun candidatesIn(mask: Mat, frameArea: Double): List<Candidate> {
+    private fun candidatesIn(
+        mask: Mat,
+        frameArea: Double,
+        minAreaRatio: Double = MIN_AREA_RATIO,
+        expectedRatio: Float? = null
+    ): List<Candidate> {
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
         return try {
@@ -228,7 +266,7 @@ object EdgeDetector {
             contours
                 .sortedByDescending { Imgproc.contourArea(it) }
                 .take(8)
-                .mapNotNull { it.toCandidate(frameArea) }
+                .mapNotNull { it.toCandidate(frameArea, minAreaRatio, expectedRatio) }
         } catch (t: Throwable) {
             emptyList()
         } finally {
@@ -237,9 +275,13 @@ object EdgeDetector {
         }
     }
 
-    private fun MatOfPoint.toCandidate(frameArea: Double): Candidate? {
+    private fun MatOfPoint.toCandidate(
+        frameArea: Double,
+        minAreaRatio: Double,
+        expectedRatio: Float?
+    ): Candidate? {
         val contourArea = Imgproc.contourArea(this)
-        if (contourArea < frameArea * MIN_AREA_RATIO) return null
+        if (contourArea < frameArea * minAreaRatio) return null
         if (contourArea > frameArea * MAX_AREA_RATIO) return null
 
         val curve = MatOfPoint2f(*toArray())
@@ -248,7 +290,7 @@ object EdgeDetector {
             if (!hasSaneAngles(quad)) return null
 
             val area = quadArea(quad)
-            if (area < frameArea * MIN_AREA_RATIO || area > frameArea * MAX_AREA_RATIO) return null
+            if (area < frameArea * minAreaRatio || area > frameArea * MAX_AREA_RATIO) return null
 
             val fill = (contourArea / area).coerceAtMost(1.0)
             if (fill < MIN_FILL_RATIO) return null
@@ -260,7 +302,23 @@ object EdgeDetector {
             // fill term makes a tight, clean quad worth more than a larger,
             // looser one even when both clear the minimum — a clean page
             // outranks the sprawling blob a busy background sometimes produces.
-            return Candidate(quad, area * fill * fill)
+            var score = area * fill * fill
+
+            // When the caller knows the subject's shape (an ID card, say), a
+            // candidate that does not roughly match it is almost certainly the
+            // desk or the table it is sitting on rather than the subject
+            // itself — reject it outright instead of letting sheer size win.
+            if (expectedRatio != null) {
+                val w = quad.outputWidth.toDouble()
+                val h = quad.outputHeight.toDouble()
+                val measured = maxOf(w, h) / minOf(w, h)
+                val diff = abs(measured - expectedRatio) / expectedRatio
+                if (diff > EXPECTED_RATIO_TOLERANCE) return null
+                val ratioFactor = 1.0 - (diff / EXPECTED_RATIO_TOLERANCE)
+                score *= ratioFactor.coerceIn(0.1, 1.0)
+            }
+
+            return Candidate(quad, score)
         } catch (t: Throwable) {
             return null
         } finally {

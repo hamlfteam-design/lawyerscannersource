@@ -87,6 +87,41 @@ data class Quad(
             )
         }
 
+        /**
+         * A centred quad matching [longToShortRatio], sized to [coverage] of the
+         * limiting frame dimension. Used as the fallback when detection finds
+         * nothing for a subject — an ID card, a passport — that is known in
+         * advance to be much smaller than the frame: [inset], which only shaves a
+         * small margin off the whole frame, would otherwise hand back the desk
+         * and everything else around the card as if it were the card.
+         */
+        fun insetForAspect(
+            width: Int,
+            height: Int,
+            longToShortRatio: Float,
+            coverage: Float = 0.7f
+        ): Quad {
+            if (longToShortRatio <= 0f) return inset(width, height)
+            val frameIsLandscape = width >= height
+            val ratio = if (frameIsLandscape) longToShortRatio else 1f / longToShortRatio
+
+            var boxWidth = width * coverage
+            var boxHeight = boxWidth / ratio
+            if (boxHeight > height * coverage) {
+                boxHeight = height * coverage
+                boxWidth = boxHeight * ratio
+            }
+
+            val dx = (width - boxWidth) / 2f
+            val dy = (height - boxHeight) / 2f
+            return Quad(
+                PointF(dx, dy),
+                PointF(width - dx, dy),
+                PointF(width - dx, height - dy),
+                PointF(dx, height - dy)
+            )
+        }
+
         fun parse(raw: String?): Quad? {
             if (raw.isNullOrBlank()) return null
             val parts = raw.split(';')

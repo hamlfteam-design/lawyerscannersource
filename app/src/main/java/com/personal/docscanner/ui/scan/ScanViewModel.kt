@@ -318,13 +318,28 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    fun autoDetect() {
+    /**
+     * Re-runs detection, optionally told in advance what shape to look for.
+     *
+     * Without [expectedFormat] this is the general-purpose pass tuned for a
+     * full page. Passing a format such as [DocumentFormat.ID_CARD] switches to
+     * a pass that accepts a much smaller candidate and rejects one whose shape
+     * does not roughly match — otherwise a card sitting on a table is no
+     * different from any other page-sized subject, and the same generic pass
+     * that finds a full sheet of paper instead grabs the table it is on.
+     */
+    fun autoDetect(expectedFormat: DocumentFormat? = null) {
         val current = _pending.value ?: return
         viewModelScope.launch {
-            val detected = withContext(Dispatchers.Default) { EdgeDetector.detect(current.bitmap) }
+            val ratio = expectedFormat?.takeIf { it.isKnown }?.ratio
+            val detected = withContext(Dispatchers.Default) {
+                EdgeDetector.detect(current.bitmap, expectedRatio = ratio)
+            }
             noteDetection(detected != null)
-            val quad = detected ?: Quad.inset(current.bitmap.width, current.bitmap.height)
-            _pending.value = _pending.value?.copy(quad = quad)
+            val quad = detected
+                ?: ratio?.let { Quad.insetForAspect(current.bitmap.width, current.bitmap.height, it) }
+                ?: Quad.inset(current.bitmap.width, current.bitmap.height)
+            _pending.value = _pending.value?.copy(quad = quad, snapTo = expectedFormat ?: _pending.value?.snapTo)
         }
     }
 
