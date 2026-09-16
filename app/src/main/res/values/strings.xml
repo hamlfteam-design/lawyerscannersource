@@ -104,6 +104,7 @@
     <string name="summarize_needs_ocr">لازم تستخرج النص (OCR) الأول قبل التلخيص.</string>
     <string name="summarize_empty">النص قصير أو مفيش حاجة تتلخص.</string>
     <string name="summarize_copy">نسخ الملخص</string>
+    <string name="reading_mode">وضع القراءة</string>
 
     <!-- Custom fields -->
     <string name="custom_fields">حقول الحفظ</string>

@@ -121,6 +121,7 @@ fun DocumentScreen(
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     var showShare by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    var showReadingMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(message) {
         message?.let {
@@ -323,15 +324,29 @@ fun DocumentScreen(
                 if (doc.doc.ocrText.isNotBlank()) {
                     item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
                     item {
-                        Text(
-                            text = stringResource(R.string.ocr),
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ocr),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = { showReadingMode = true }) {
+                                Text(stringResource(R.string.reading_mode))
+                            }
+                        }
                         Spacer(Modifier.height(6.dp))
-                        Card(Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showReadingMode = true }
+                        ) {
                             Text(
                                 text = doc.doc.ocrText,
                                 style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 6,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(12.dp)
                             )
                         }
@@ -424,6 +439,10 @@ fun DocumentScreen(
                 }
             }
         )
+    }
+
+    if (showReadingMode && doc != null) {
+        ReadingModeScreen(text = doc.doc.ocrText, onDismiss = { showReadingMode = false })
     }
 
     summary?.let { state ->
