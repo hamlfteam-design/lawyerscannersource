@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The logo is drawn for a light ground. -->
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Same ink navy as the app's own theme (Theme.kt's `Ink`), so the
+         launcher icon reads as the same product as the UI behind it. -->
+    <color name="ic_launcher_background">#1E2A38</color>
 </resources>

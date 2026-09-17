@@ -1,28 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  PLACEHOLDER — replace with the real logo.
+  App icon artwork: a page (the scanner's subject) crossed by a bold scan
+  beam (the scanner's action), in the app's own theme colours — Paper on Ink
+  with the Theme.kt Accent orange — so the launcher icon reads as the same
+  product as the UI behind it rather than an unrelated placeholder.
 
-  Drop `logo_lawyer.png` into this same folder (app/src/main/res/drawable/) and
-  then delete this file. Two files with the same resource name in one folder is
-  a build error, so the .png and this .xml cannot both be here.
-
-  Deliberately a plain sheet of paper: a placeholder should read as "artwork is
-  missing", not as a symbol of anything.
+  Kept to two flat shapes plus one beam on purpose: at a 24-48dp launcher
+  size, a third element (a scale of justice, a magnifier) stops reading as a
+  distinct shape and just muddies the silhouette. The colour pairing alone
+  carries "professional legal", so the drawing only has to carry "scanner".
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Sheet with a folded corner -->
+    <!-- Page, with a folded top-right corner -->
     <path
-        android:fillColor="#F2E9D8"
+        android:fillColor="#F7F8FA"
         android:pathData="M32,20h30l14,14v54a4,4 0 0,1 -4,4h-40a4,4 0 0,1 -4,-4v-64a4,4 0 0,1 4,-4z" />
     <path
-        android:fillColor="#C8971E"
+        android:fillColor="#DCE1E8"
         android:pathData="M62,20l14,14h-14z" />
-    <!-- Ruled lines -->
+
+    <!-- Ruled lines underneath the beam, hinting at scanned text -->
     <path
-        android:fillColor="#C8971E"
-        android:pathData="M40,46h28v4h-28zM40,58h28v4h-28zM40,70h18v4h-18z" />
+        android:fillColor="#B4BFCB"
+        android:pathData="M40,50h28v3.6h-28zM40,60h28v3.6h-28zM40,70h18v3.6h-18z" />
+
+    <!-- The scan beam: a bright diagonal band with a soft leading/trailing
+         fade, laid over the page like a flatbed scanner's light mid-pass. -->
+    <path
+        android:fillColor="#33E9622F"
+        android:pathData="M24,58l60,-24v10l-60,24z" />
+    <path
+        android:fillColor="#E9622F"
+        android:pathData="M24,64l60,-24v6l-60,24z" />
+    <path
+        android:fillColor="#33E9622F"
+        android:pathData="M24,70l60,-24v10l-60,24z" />
 </vector>
